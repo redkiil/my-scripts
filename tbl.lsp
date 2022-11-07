@@ -2,13 +2,15 @@
   	(command "undo" "begin")
     (setq i 0)
   	(setq field (entget (ssname (ssget) 0)))
-    (princ field)
-
     (setq entName (cdr (assoc -1 field)))
     (setq obj (vlax-ename->vla-object entName))
     (setq area (vlax-get-property obj 'Area))
     (setq hec (/ area 10000))
-    (setq lname (getreal (strcat "\nO talhão tem hectares? < " (vl-princ-to-string (eval hec)) ">: ")))
+    (setq hecNew (getreal (strcat "\nO talhão tem hectares? < " (rtos hec 2 2) ">: ")))
+    (if (/= hecNew nil)
+		 (setq hec hecNew)
+		)
+    (princ "Selecione as linhas de meiose:\n")
   	(setq lines (ssget))
     (setq sumOfAllLines 0)
     (while (setq line (ssname lines i))
@@ -20,8 +22,22 @@
     (princ (strcat "\n Soma de todas as linhas: "(vl-princ-to-string (eval sumOfAllLines))""))
     (setq point (getpoint "Selecione um ponto para colocar a tabela:"))
     (setq talhao (getstring "Informe o numero do talhão:"))
-    (setq bigstr (strcat "TALHAO: " talhao "\\PHEC:" (vl-princ-to-string (eval hec)) "\\PLINHAS: " (vl-princ-to-string (eval sumOfAllLines)) " M"))
-    (setq pointForMtext (list ( + (nth 0 point) 10) (- (nth 1 point) 10)))
+    (setq securityCoeff 6.3)
+    (setq meioseCoeff 4.8)
+    (setq avgLinesLength (/ sumOfAllLines 2))
+    (setq securityMeiose (/ (* securityCoeff avgLinesLength) 10000))
+    (setq meiose (/ (* meioseCoeff avgLinesLength) 10000))
+    (setq desdobra (- hec meiose))
+    (setq areasoja (- hec securityMeiose))
+    (setq bigstr (strcat "TALHAO: " talhao 
+                         "\\PHA: " (vl-princ-to-string (rtos hec 2 2)) 
+                         "\\PAREA SOJA: " (vl-princ-to-string (rtos areasoja 2 2)) " HA"
+                         "\\PDESDOBRA: " (vl-princ-to-string (rtos desdobra 2 2)) " HA"
+                         "\\PMEIOSE: " (vl-princ-to-string (rtos meiose 2 2)) " HA"
+                         "\\PSEGURANÇA: " (vl-princ-to-string (rtos securityMeiose 2 2)) " HA"
+                         "\\PCOMP LINHAS: " (vl-princ-to-string sumOfAllLines) " M"
+                 ))
+    (setq pointForMtext (list ( + (nth 0 point) 5) (- (nth 1 point) 5)))
     (entmake (list '(0 . "MTEXT") 
                    '(102 . "{ACAD_XDICTIONARY") 
                    '(102 . "}") 
@@ -32,7 +48,7 @@
                    '(62 . 250) 
                    '(100 . "AcDbMText") 
                    (cons 10 pointForMtext)
-                   '(40 . 20.0) 
+                   '(40 . 15.0) 
                    '(41 . 0.0) 
                    '(46 . 0.0) 
                    '(71 . 1) 
@@ -45,17 +61,17 @@
                    '(43 . 44.0291) 
                    '(50 . 0.0) 
                    '(73 . 1) 
-                   '(44 . 1.0)
+                   '(44 . 1.5)
              )
     )
   
     (setq firstCorner point)
   
-    (setq secondCorner (list ( + (nth 0 point) 300) (nth 1 point)))
+    (setq secondCorner (list ( + (nth 0 point) 280) (nth 1 point)))
   
-    (setq thirdCorner (list ( + (nth 0 point) 300) (- (nth 1 point) 150)))
+    (setq thirdCorner (list ( + (nth 0 point) 280) (- (nth 1 point) 260)))
   
-    (setq fourthCorner (list (nth 0 point) (- (nth 1 point) 150)))
+    (setq fourthCorner (list (nth 0 point) (- (nth 1 point) 260)))
 
     (entmake (list '(0 . "LWPOLYLINE") 
                   '(100 . "AcDbEntity") 
